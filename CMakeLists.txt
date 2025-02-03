@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10.0)
-project(pxd-cpp-template VERSION 0.1.0 LANGUAGES C CXX)
+project(pxd-memory-pool VERSION 0.1.0 LANGUAGES C CXX)
 
 LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmakes)
 set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/install)
