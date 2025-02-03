@@ -1,54 +1,63 @@
 #include "../includes/memory_pool.hpp"
 
-#include <cstdint>
-#include <list>
-#include <vector>
+#include <algorithm>
 
 namespace pxd {
-
-class MemoryPool
-{
-private:
-  struct MemoryInfo
-  {
-    size_t start_index = 0;
-    size_t total_size  = 0;
-
-    MemoryInfo()                                   = default;
-    MemoryInfo(const MemoryInfo& other)            = default;
-    MemoryInfo& operator=(const MemoryInfo& other) = default;
-    MemoryInfo(MemoryInfo&& other)                 = default;
-    MemoryInfo& operator=(MemoryInfo&& other)      = default;
-    ~MemoryInfo() noexcept                         = default;
-
-    bool operator==(const MemoryInfo& other)
-    {
-      return start_index == other.start_index && total_size == other.total_size;
-    }
-
-    bool operator!=(const MemoryInfo& other)
-    {
-      return start_index != other.start_index || total_size != other.total_size;
-    }
-  };
-
-public:
-  MemoryPool() = delete;
-  explicit MemoryPool(size_t size);
-  MemoryPool(const MemoryPool& other)            = default;
-  MemoryPool& operator=(const MemoryPool& other) = default;
-  MemoryPool(MemoryPool&& other)                 = default;
-  MemoryPool& operator=(MemoryPool&& other)      = default;
-  ~MemoryPool() noexcept                         = default;
-
-private:
-  std::vector<uint8_t>  m_memory;
-  std::list<MemoryInfo> m_free_memories;
-};
 
 MemoryPool::MemoryPool(size_t size)
 {
   m_memory.resize(size);
+
+  MemoryInfo all  = {};
+  all.start_index = 0;
+  all.total_size  = size;
+
+  m_free_memories.push_back(all);
+}
+
+auto
+MemoryPool::malloc(size_t size) -> void*
+{
+  if (m_free_memories.empty()) {
+    return nullptr;
+  }
+
+  if (size > m_memory.size()) {
+    return nullptr;
+  }
+
+  std::vector<MemoryInfo> candidates;
+
+  for (auto& m_free_memorie : m_free_memories) {
+    if (m_free_memorie.total_size >= size) {
+      candidates.push_back(m_free_memorie);
+    }
+  }
+
+  std::ranges::sort(candidates, [](const MemoryInfo& a, const MemoryInfo& b) {
+    return a.total_size < b.total_size;
+  });
+
+  MemoryInfo selected  = candidates[0];
+  void*      start_ptr = static_cast<void*>(&m_memory[selected.start_index]);
+
+  m_free_memories.pop_front();
+
+  MemoryInfo allocated  = {};
+  allocated.start_index = selected.start_index;
+  allocated.total_size  = size;
+
+  m_allocated_memories.push_back(allocated);
+
+  if (selected.total_size != size) {
+    MemoryInfo remaining  = {};
+    remaining.start_index = selected.start_index + size;
+    remaining.total_size  = selected.total_size - size;
+
+    m_free_memories.push_back(remaining);
+  }
+
+  return start_ptr;
 }
 
 } // namespace pxd
