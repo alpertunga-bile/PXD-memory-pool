@@ -29,11 +29,15 @@ option(PXD_BUILD_TEST "Build test executable" OFF)
 set(PXD_HEADER_FILES
   ${PXD_INCLUDE_DIR}/logger.hpp
   ${PXD_INCLUDE_DIR}/assert_checks.hpp
+
+  ${PXD_INCLUDE_DIR}/memory_pool.hpp
 )
 
 set(PXD_SOURCE_FILES
   ${PXD_SOURCE_DIR}/logger.cpp
   ${PXD_SOURCE_DIR}/assert_checks.cpp
+
+  ${PXD_SOURCE_DIR}/memory_pool.cpp
 
   ${PXD_HEADER_FILES}
 )
