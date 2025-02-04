@@ -3,9 +3,11 @@
 auto
 main() -> int
 {
-  pxd::MemoryPool mem_pool(128);
+  pxd::memory::alloc_memory(128);
 
-  void* temp = static_cast<void*>(mem_pool.malloc(10));
+  void* temp = pxd::memory::malloc(10);
+
+  pxd::memory::free_memory();
 
   return 0;
 }

@@ -6,18 +6,20 @@
 
 TEST(MemoryPool, MallocEmpty)
 {
-  pxd::MemoryPool memory_pool(MEMORY_POOL_DEFAULT_SIZE);
+  pxd::memory::alloc_memory(MEMORY_POOL_DEFAULT_SIZE);
 
-  void* temp = memory_pool.malloc(10);
+  void* temp = pxd::memory::malloc(10);
 
   EXPECT_NE(temp, nullptr);
+
+  pxd::memory::free_memory();
 }
 
 TEST(MemoryPool, MallocIntArray)
 {
-  pxd::MemoryPool memory_pool(MEMORY_POOL_DEFAULT_SIZE);
+  pxd::memory::alloc_memory(MEMORY_POOL_DEFAULT_SIZE);
 
-  int* arr = static_cast<int*>(memory_pool.malloc(10));
+  int* arr = static_cast<int*>(pxd::memory::malloc(10));
 
   for (int i = 0; i < 10; ++i) {
     arr[i] = i + 1;
@@ -26,4 +28,6 @@ TEST(MemoryPool, MallocIntArray)
   for (int i = 0; i < 10; ++i) {
     EXPECT_EQ(i + 1, arr[i]);
   }
+
+  pxd::memory::free_memory();
 }
