@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <cstring>
 #include <list>
 #include <vector>
 
@@ -94,6 +95,20 @@ malloc(size_t size) -> void*
   }
 
   return start_ptr;
+}
+
+auto
+calloc(size_t size) -> void*
+{
+  void* result = malloc(size);
+
+  if (nullptr == result) {
+    return nullptr;
+  }
+
+  std::memset(result, 0, size);
+
+  return result;
 }
 
 void

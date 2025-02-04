@@ -88,8 +88,8 @@ if(PXD_BUILD_TEST)
     set(PXD_TEST_PROJECT_NAME ${PROJECT_NAME}_test)
 
     set(PXD_TEST_SOURCE_FILES
-        ${PXD_TEST_SOURCE_DIR}/test.cpp
         ${PXD_TEST_SOURCE_DIR}/malloc_tests.cpp
+        ${PXD_TEST_SOURCE_DIR}/calloc_tests.cpp
 
         ${PXD_SOURCE_FILES}
     )
