@@ -96,7 +96,9 @@ malloc(size_t size) -> void*
   return start_ptr;
 }
 
-void free_memory() {
+void
+free_memory()
+{
   memory.m_memory.clear();
   memory.m_free_memories.clear();
   memory.m_allocated_memories.clear();
