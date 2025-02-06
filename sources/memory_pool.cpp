@@ -29,6 +29,16 @@ struct MemoryInfo
   {
     return start_index != other.start_index || total_size != other.total_size;
   }
+
+  auto is_prev_from_given(const MemoryInfo& other) const -> bool
+  {
+    return (start_index + total_size) == other.start_index;
+  }
+
+  auto is_next_from_given(const MemoryInfo& other) const -> bool
+  {
+    return (other.start_index + other.total_size) == start_index;
+  }
 };
 
 struct Memory
@@ -55,44 +65,46 @@ alloc_memory(size_t size)
 auto
 malloc(size_t size) -> void*
 {
-  if (memory.m_free_memories.empty()) {
+  if (memory.m_free_memories.empty() || size > memory.m_memory.size()) {
     return nullptr;
   }
 
-  if (size > memory.m_memory.size()) {
-    return nullptr;
+  if (memory.m_free_memories.size() > 1) {
+    memory.m_free_memories.sort(
+      [](const MemoryInfo& lhs, const MemoryInfo& rhs) {
+        return lhs.total_size < rhs.total_size;
+      });
   }
 
-  std::vector<MemoryInfo> candidates;
+  auto selected = memory.m_free_memories.end();
 
-  for (auto& free_mem : memory.m_free_memories) {
-    if (free_mem.total_size >= size) {
-      candidates.push_back(free_mem);
+  for (auto iter = memory.m_free_memories.begin();
+       iter != memory.m_free_memories.end();
+       ++iter) {
+    if (iter->total_size >= size) {
+      selected = iter;
+      break;
     }
   }
 
-  std::ranges::sort(candidates, [](const MemoryInfo& a, const MemoryInfo& b) {
-    return a.total_size < b.total_size;
-  });
-
-  MemoryInfo selected = candidates[0];
-  void* start_ptr = static_cast<void*>(&memory.m_memory[selected.start_index]);
-
-  memory.m_free_memories.pop_front();
+  if (selected == memory.m_free_memories.end()) {
+    return nullptr;
+  }
 
   MemoryInfo allocated  = {};
-  allocated.start_index = selected.start_index;
+  allocated.start_index = selected->start_index;
   allocated.total_size  = size;
 
   memory.m_allocated_memories.push_back(allocated);
 
-  if (selected.total_size != size) {
-    MemoryInfo remaining  = {};
-    remaining.start_index = selected.start_index + size;
-    remaining.total_size  = selected.total_size - size;
-
-    memory.m_free_memories.push_back(remaining);
+  if (selected->total_size > size) {
+    selected->start_index += size;
+    selected->total_size  -= size;
+  } else {
+    auto num_removed = memory.m_free_memories.remove(*selected);
   }
+
+  void* start_ptr = static_cast<void*>(&memory.m_memory[selected->start_index]);
 
   return start_ptr;
 }
@@ -112,7 +124,72 @@ calloc(size_t size) -> void*
 }
 
 void
-free_memory()
+merge_with_given_memory(MemoryInfo found_info)
+{
+  size_t num_removed = 0;
+
+  MemoryInfo prev_of_found = {};
+  MemoryInfo next_of_found = {};
+
+  for (auto& free_mem : memory.m_free_memories) {
+    if (found_info.is_prev_from_given(free_mem)) {
+      next_of_found = free_mem;
+      break;
+    }
+
+    if (found_info.is_next_from_given(free_mem)) {
+      prev_of_found = free_mem;
+      break;
+    }
+  }
+
+  if (next_of_found.total_size > 0) {
+    num_removed = memory.m_free_memories.remove(next_of_found);
+
+    found_info.total_size += next_of_found.total_size;
+
+    memory.m_free_memories.push_back(found_info);
+  } else if (prev_of_found.total_size > 0) {
+    num_removed = memory.m_free_memories.remove(prev_of_found);
+
+    prev_of_found.total_size += found_info.total_size;
+
+    memory.m_free_memories.push_back(prev_of_found);
+  } else {
+    memory.m_free_memories.push_back(found_info);
+  }
+}
+
+void
+free(void* mem_pointer)
+{
+  if (memory.m_allocated_memories.empty()) {
+    return;
+  }
+
+  MemoryInfo found_info   = {};
+  size_t     alloc_length = memory.m_allocated_memories.size();
+
+  for (auto& alloc_mem : memory.m_allocated_memories) {
+    void* ptr = static_cast<void*>(&memory.m_memory[alloc_mem.start_index]);
+
+    if (ptr == mem_pointer) {
+      found_info = alloc_mem;
+      break;
+    }
+  }
+
+  if (found_info.total_size == 0) {
+    return;
+  }
+
+  auto num_removed = memory.m_allocated_memories.remove(found_info);
+
+  merge_with_given_memory(found_info);
+}
+
+void
+release_memory()
 {
   memory.m_memory.clear();
   memory.m_free_memories.clear();

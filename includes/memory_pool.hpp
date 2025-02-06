@@ -8,7 +8,8 @@ void alloc_memory(size_t size);
 
 auto malloc(size_t size) -> void*;
 auto calloc(size_t size) -> void*;
+void free(void* mem_pointer);
 
-void free_memory();
+void release_memory();
 
 } // namespace pxd::memory
