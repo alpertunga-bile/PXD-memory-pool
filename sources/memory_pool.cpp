@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
+#include <execution>
 #include <list>
 #include <vector>
 
@@ -30,12 +31,16 @@ struct MemoryInfo
     return start_index != other.start_index || total_size != other.total_size;
   }
 
-  auto is_prev_from_given(const MemoryInfo& other) const -> bool
+  [[nodiscard]] auto empty() const -> bool {
+    return total_size == 0;
+  }
+
+  [[nodiscard]] auto is_prev_from_given(const MemoryInfo& other) const -> bool
   {
     return (start_index + total_size) == other.start_index;
   }
 
-  auto is_next_from_given(const MemoryInfo& other) const -> bool
+  [[nodiscard]] auto is_next_from_given(const MemoryInfo& other) const -> bool
   {
     return (other.start_index + other.total_size) == start_index;
   }
@@ -124,68 +129,38 @@ calloc(size_t size) -> void*
 }
 
 void
-merge_with_given_memory(MemoryInfo found_info)
-{
-  size_t num_removed = 0;
-
-  MemoryInfo prev_of_found = {};
-  MemoryInfo next_of_found = {};
-
-  for (auto& free_mem : memory.m_free_memories) {
-    if (found_info.is_prev_from_given(free_mem)) {
-      next_of_found = free_mem;
-      break;
-    }
-
-    if (found_info.is_next_from_given(free_mem)) {
-      prev_of_found = free_mem;
-      break;
-    }
-  }
-
-  if (next_of_found.total_size > 0) {
-    num_removed = memory.m_free_memories.remove(next_of_found);
-
-    found_info.total_size += next_of_found.total_size;
-
-    memory.m_free_memories.push_back(found_info);
-  } else if (prev_of_found.total_size > 0) {
-    num_removed = memory.m_free_memories.remove(prev_of_found);
-
-    prev_of_found.total_size += found_info.total_size;
-
-    memory.m_free_memories.push_back(prev_of_found);
-  } else {
-    memory.m_free_memories.push_back(found_info);
-  }
-}
-
-void
 free(void* mem_pointer)
 {
+  /*
+   * there are no allocations
+   */
   if (memory.m_allocated_memories.empty()) {
     return;
   }
 
-  MemoryInfo found_info   = {};
-  size_t     alloc_length = memory.m_allocated_memories.size();
+  auto found_info =
+    std::find_if(std::execution::par_unseq,
+                 memory.m_allocated_memories.begin(),
+                 memory.m_allocated_memories.end(),
+                 [&mem_pointer](const MemoryInfo& info) {
+                   return mem_pointer == static_cast<void*>(
+                                           &memory.m_memory[info.start_index]);
+                 });
 
-  for (auto& alloc_mem : memory.m_allocated_memories) {
-    void* ptr = static_cast<void*>(&memory.m_memory[alloc_mem.start_index]);
+  MemoryInfo found_mem = *found_info;
 
-    if (ptr == mem_pointer) {
-      found_info = alloc_mem;
-      break;
+  MemoryInfo next_from_found = {};
+  MemoryInfo prev_from_found = {};
+
+  if(memory.m_free_memories.size() == 1) {
+    MemoryInfo free_mem = (*memory.m_free_memories.begin());
+
+    if(found_mem.is_next_from_given(free_mem)) {
+      prev_from_found = free_mem;
+    } else if(found_mem.is_prev_from_given(free_mem)) {
+      next_from_found = free_mem;
     }
   }
-
-  if (found_info.total_size == 0) {
-    return;
-  }
-
-  auto num_removed = memory.m_allocated_memories.remove(found_info);
-
-  merge_with_given_memory(found_info);
 }
 
 void

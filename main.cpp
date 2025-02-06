@@ -10,7 +10,7 @@ main() -> int
 
   pxd::memory::free(temp_2);
 
-  pxd::memory::free_memory();
+  pxd::memory::release_memory();
 
   return 0;
 }
