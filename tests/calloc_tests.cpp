@@ -2,7 +2,7 @@
 
 #include "../includes/memory_pool.hpp"
 
-TEST(MemoryPool, CAllocTest) {
+TEST(Calloc, Array) {
   pxd::memory::alloc_memory(128);
 
   int* temp_arr = static_cast<int*>(pxd::memory::calloc(10));
@@ -11,5 +11,15 @@ TEST(MemoryPool, CAllocTest) {
     EXPECT_EQ(temp_arr[i], 0);
   }
 
-  pxd::memory::free_memory();
+  pxd::memory::release_memory();
+}
+
+TEST(Calloc, MoreSize) {
+  pxd::memory::alloc_memory(128);
+
+  void* temp = pxd::memory::malloc(256);
+
+  EXPECT_EQ(temp, nullptr);
+
+  pxd::memory::release_memory();
 }

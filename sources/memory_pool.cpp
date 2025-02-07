@@ -4,10 +4,7 @@
 #include <cstdint>
 #include <cstring>
 #include <execution>
-#include <list>
 #include <vector>
-
-#include <fmt/base.h>
 
 namespace pxd::memory {
 
@@ -216,50 +213,6 @@ release_memory()
   memory.m_memory.clear();
   memory.m_free_memories.clear();
   memory.m_allocated_memories.clear();
-}
-
-void
-print_allocated_memories()
-{
-  if (memory.m_allocated_memories.empty()) {
-    return;
-  }
-
-  fmt::println(" -------- Alloc Mem -------- ");
-
-  for (auto& alloc_mem : memory.m_allocated_memories) {
-    fmt::println(" --------------------------- ");
-    fmt::println("|                           |");
-    fmt::println("|      Index  :  {}         |", alloc_mem.start_index);
-    fmt::println("|      Size   :  {}         |", alloc_mem.total_size);
-    fmt::println("|                           |");
-    fmt::println(" --------------------------- ");
-    fmt::println("              |               ");
-  }
-
-  fmt::println(" ------------- END ----------- ");
-}
-
-void
-print_freed_memories()
-{
-  if (memory.m_free_memories.empty()) {
-    return;
-  }
-
-  fmt::println(" --------- Free Mem -------- ");
-
-  for (auto& free_mem : memory.m_free_memories) {
-    fmt::println(" --------------------------- ");
-    fmt::println("|                           |");
-    fmt::println("|      Index  :  {}         |", free_mem.start_index);
-    fmt::println("|      Size   :  {}         |", free_mem.total_size);
-    fmt::println("|                           |");
-    fmt::println(" --------------------------- ");
-    fmt::println("              |               ");
-  }
-
-  fmt::println(" ------------- END ----------- ");
 }
 
 } // namespace pxd::memory

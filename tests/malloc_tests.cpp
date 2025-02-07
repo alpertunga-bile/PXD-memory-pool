@@ -1,10 +1,11 @@
+#include <alloca.h>
 #include <gtest/gtest.h>
 
 #include "../includes/memory_pool.hpp"
 
 #define MEMORY_POOL_DEFAULT_SIZE 128
 
-TEST(MemoryPool, MallocEmpty)
+TEST(Malloc, Empty)
 {
   pxd::memory::alloc_memory(MEMORY_POOL_DEFAULT_SIZE);
 
@@ -12,10 +13,10 @@ TEST(MemoryPool, MallocEmpty)
 
   EXPECT_NE(temp, nullptr);
 
-  pxd::memory::free_memory();
+  pxd::memory::release_memory();
 }
 
-TEST(MemoryPool, MallocIntArray)
+TEST(Malloc, IntArray)
 {
   pxd::memory::alloc_memory(MEMORY_POOL_DEFAULT_SIZE);
 
@@ -29,10 +30,10 @@ TEST(MemoryPool, MallocIntArray)
     EXPECT_EQ(i + 1, arr[i]);
   }
 
-  pxd::memory::free_memory();
+  pxd::memory::release_memory();
 }
 
-TEST(MemoryPool, MallocFloatArray)
+TEST(Malloc, FloatArray)
 {
   pxd::memory::alloc_memory(MEMORY_POOL_DEFAULT_SIZE);
 
@@ -46,10 +47,10 @@ TEST(MemoryPool, MallocFloatArray)
     EXPECT_FLOAT_EQ(static_cast<float>(i + 1), arr[i]);
   }
 
-  pxd::memory::free_memory();
+  pxd::memory::release_memory();
 }
 
-TEST(MemoryPool, MallocDoubleArray)
+TEST(Malloc, DoubleArray)
 {
   pxd::memory::alloc_memory(MEMORY_POOL_DEFAULT_SIZE);
 
@@ -63,7 +64,7 @@ TEST(MemoryPool, MallocDoubleArray)
     EXPECT_DOUBLE_EQ(static_cast<double>(i + 1), arr[i]);
   }
 
-  pxd::memory::free_memory();
+  pxd::memory::release_memory();
 }
 
 struct Temp
@@ -73,7 +74,7 @@ struct Temp
   double m_double;
 };
 
-TEST(MemoryPool, MallocStruct)
+TEST(Malloc, Struct)
 {
   pxd::memory::alloc_memory(MEMORY_POOL_DEFAULT_SIZE);
 
@@ -92,5 +93,15 @@ TEST(MemoryPool, MallocStruct)
   EXPECT_FLOAT_EQ(temp->m_float, res.m_float);
   EXPECT_DOUBLE_EQ(temp->m_double, res.m_double);
 
-  pxd::memory::free_memory();
+  pxd::memory::release_memory();
+}
+
+TEST(Malloc, MoreSize) {
+  pxd::memory::alloc_memory(MEMORY_POOL_DEFAULT_SIZE);
+
+  void* temp = pxd::memory::malloc(2 * MEMORY_POOL_DEFAULT_SIZE);
+
+  EXPECT_EQ(temp, nullptr);
+
+  pxd::memory::release_memory();
 }
