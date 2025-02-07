@@ -48,8 +48,8 @@ operator!=(const MemoryInfo& lhs, const MemoryInfo& rhs)
 struct Memory
 {
   std::vector<uint8_t>  m_memory;
-  std::list<MemoryInfo> m_free_memories;
-  std::list<MemoryInfo> m_allocated_memories;
+  std::list<MemoryInfo> m_freed;
+  std::list<MemoryInfo> m_allocated;
 };
 
 Memory memory;
@@ -63,27 +63,25 @@ alloc_memory(size_t size)
   all.start_index = 0;
   all.total_size  = size;
 
-  memory.m_free_memories.push_back(all);
+  memory.m_freed.push_back(all);
 }
 
 auto
 malloc(size_t size) -> void*
 {
-  if (memory.m_free_memories.empty() || size > memory.m_memory.size()) {
+  if (memory.m_freed.empty() || size > memory.m_memory.size()) {
     return nullptr;
   }
 
-  if (memory.m_free_memories.size() > 1) {
-    memory.m_free_memories.sort(
-      [](const MemoryInfo& lhs, const MemoryInfo& rhs) {
-        return lhs.total_size < rhs.total_size;
-      });
+  if (memory.m_freed.size() > 1) {
+    memory.m_freed.sort([](const MemoryInfo& lhs, const MemoryInfo& rhs) {
+      return lhs.total_size < rhs.total_size;
+    });
   }
 
-  auto selected = memory.m_free_memories.end();
+  auto selected = memory.m_freed.end();
 
-  for (auto iter = memory.m_free_memories.begin();
-       iter != memory.m_free_memories.end();
+  for (auto iter = memory.m_freed.begin(); iter != memory.m_freed.end();
        ++iter) {
     if (iter->total_size >= size) {
       selected = iter;
@@ -91,7 +89,7 @@ malloc(size_t size) -> void*
     }
   }
 
-  if (selected == memory.m_free_memories.end()) {
+  if (selected == memory.m_freed.end()) {
     return nullptr;
   }
 
@@ -101,13 +99,13 @@ malloc(size_t size) -> void*
   allocated.start_index = selected->start_index;
   allocated.total_size  = size;
 
-  memory.m_allocated_memories.push_back(allocated);
+  memory.m_allocated.push_back(allocated);
 
   if (selected->total_size > size) {
     selected->start_index += size;
     selected->total_size  -= size;
   } else {
-    auto num_removed = memory.m_free_memories.remove(*selected);
+    auto num_removed = memory.m_freed.remove(*selected);
   }
 
   return start_ptr;
@@ -133,36 +131,36 @@ free(void* mem_pointer)
   /*
    * there are no allocations
    */
-  if (memory.m_allocated_memories.empty()) {
+  if (memory.m_allocated.empty()) {
     return;
   }
 
   auto found_info =
-    std::find_if(memory.m_allocated_memories.begin(),
-                 memory.m_allocated_memories.end(),
+    std::find_if(memory.m_allocated.begin(),
+                 memory.m_allocated.end(),
                  [&mem_pointer](const MemoryInfo& info) {
                    return mem_pointer == static_cast<void*>(
                                            &memory.m_memory[info.start_index]);
                  });
 
-  if (found_info == memory.m_allocated_memories.end()) {
+  if (found_info == memory.m_allocated.end()) {
     return;
   }
 
   MemoryInfo next_from_found = {};
   MemoryInfo prev_from_found = {};
 
-  if (memory.m_free_memories.size() == 1) {
-    MemoryInfo free_mem = (*memory.m_free_memories.begin());
+  if (memory.m_freed.size() == 1) {
+    MemoryInfo free_mem = (*memory.m_freed.begin());
 
     if (found_info->is_next_from_given(free_mem)) {
       prev_from_found = free_mem;
     } else if (found_info->is_prev_from_given(free_mem)) {
       next_from_found = free_mem;
     }
-  } else if (memory.m_free_memories.size() > 1) {
-    std::vector<MemoryInfo> free_mem_sorted(memory.m_free_memories.begin(),
-                                            memory.m_free_memories.end());
+  } else if (memory.m_freed.size() > 1) {
+    std::vector<MemoryInfo> free_mem_sorted(memory.m_freed.begin(),
+                                            memory.m_freed.end());
 
     std::ranges::sort(free_mem_sorted,
                       [](const MemoryInfo& lhs, const MemoryInfo& rhs) {
@@ -189,31 +187,31 @@ free(void* mem_pointer)
   int num_removed = 0;
 
   if (prev_from_found.empty() && next_from_found.empty()) {
-    memory.m_free_memories.push_back(*found_info);
+    memory.m_freed.push_back(*found_info);
   } else if (!prev_from_found.empty() && next_from_found.empty()) {
     prev_from_found.total_size += found_info->total_size;
   } else if (prev_from_found.empty() && !next_from_found.empty()) {
     found_info->total_size += next_from_found.total_size;
 
-    num_removed = memory.m_free_memories.remove(next_from_found);
-    memory.m_free_memories.push_back(*found_info);
+    num_removed = memory.m_freed.remove(next_from_found);
+    memory.m_freed.push_back(*found_info);
   } else {
     prev_from_found.total_size +=
       (found_info->total_size + next_from_found.total_size);
 
-    num_removed = memory.m_free_memories.remove(next_from_found);
-    memory.m_free_memories.push_back(*found_info);
+    num_removed = memory.m_freed.remove(next_from_found);
+    memory.m_freed.push_back(*found_info);
   }
 
-  num_removed = memory.m_allocated_memories.remove(*found_info);
+  num_removed = memory.m_allocated.remove(*found_info);
 }
 
 void
 release_memory()
 {
   memory.m_memory.clear();
-  memory.m_free_memories.clear();
-  memory.m_allocated_memories.clear();
+  memory.m_freed.clear();
+  memory.m_allocated.clear();
 }
 
 } // namespace pxd::memory
