@@ -27,16 +27,10 @@ set(PXD_THIRD_PARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third-party)
 option(PXD_BUILD_TEST "Build test executable" OFF)
 
 set(PXD_HEADER_FILES
-  ${PXD_INCLUDE_DIR}/logger.hpp
-  ${PXD_INCLUDE_DIR}/assert_checks.hpp
-
   ${PXD_INCLUDE_DIR}/memory_pool.hpp
 )
 
 set(PXD_SOURCE_FILES
-  ${PXD_SOURCE_DIR}/logger.cpp
-  ${PXD_SOURCE_DIR}/assert_checks.cpp
-
   ${PXD_SOURCE_DIR}/memory_pool.cpp
 
   ${PXD_HEADER_FILES}
@@ -47,26 +41,22 @@ include_directories(
 )
 
 set(COMMON_STD_HEADERS
-
+  <cstddef>
+  <list>
+  <algorithm>
+  <cstdint>
+  <cstring>
+  <execution>
+  <vector>
 )
 
 # ---------------------------------------------------------------
 include(FetchContent)
 set(BUILD_SHARED_LIBRARY OFF)
 
-# --- fmt
-FetchContent_Declare(
-  fmt
-  GIT_REPOSITORY https://github.com/fmtlib/fmt
-  GIT_TAG master
-)
-FetchContent_MakeAvailable(fmt)
-
-
 # ---------------------------------------------------------------
 
 set(LIBS_TO_LINK
-  fmt::fmt
 )
 
 add_executable(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp ${PXD_SOURCE_FILES})
