@@ -1,3 +1,3 @@
-# PXD_cpp_template
+# PXD-memory-pool
 
-Starting point for cpp projects of the PixelDancer projects.
+Custom implemented malloc, calloc, free functions
