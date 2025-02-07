@@ -3,8 +3,8 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
-#include <execution>
 #include <vector>
+
 
 namespace pxd::memory {
 
@@ -136,7 +136,7 @@ free(void* mem_pointer)
   }
 
   auto found_info =
-    std::find_if(std::execution::par_unseq,
+    std::find_if(
                  memory.m_allocated_memories.begin(),
                  memory.m_allocated_memories.end(),
                  [&mem_pointer](const MemoryInfo& info) {
