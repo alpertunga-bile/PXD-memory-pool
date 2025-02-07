@@ -3,8 +3,8 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
+#include <list>
 #include <vector>
-
 
 namespace pxd::memory {
 
@@ -20,16 +20,6 @@ struct MemoryInfo
   MemoryInfo& operator=(MemoryInfo&& other)      = default;
   ~MemoryInfo() noexcept                         = default;
 
-  bool operator==(const MemoryInfo& other)
-  {
-    return start_index == other.start_index && total_size == other.total_size;
-  }
-
-  bool operator!=(const MemoryInfo& other)
-  {
-    return start_index != other.start_index || total_size != other.total_size;
-  }
-
   [[nodiscard]] auto empty() const -> bool { return total_size == 0; }
 
   [[nodiscard]] auto is_prev_from_given(const MemoryInfo& other) const -> bool
@@ -42,6 +32,18 @@ struct MemoryInfo
     return (other.start_index + other.total_size) == start_index;
   }
 };
+
+constexpr bool
+operator==(const MemoryInfo& lhs, const MemoryInfo& rhs)
+{
+  return lhs.start_index == rhs.start_index && lhs.total_size == rhs.total_size;
+}
+
+constexpr bool
+operator!=(const MemoryInfo& lhs, const MemoryInfo& rhs)
+{
+  return lhs.start_index != rhs.start_index || lhs.total_size != rhs.total_size;
+}
 
 struct Memory
 {
@@ -136,8 +138,7 @@ free(void* mem_pointer)
   }
 
   auto found_info =
-    std::find_if(
-                 memory.m_allocated_memories.begin(),
+    std::find_if(memory.m_allocated_memories.begin(),
                  memory.m_allocated_memories.end(),
                  [&mem_pointer](const MemoryInfo& info) {
                    return mem_pointer == static_cast<void*>(

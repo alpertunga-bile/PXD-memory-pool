@@ -1,4 +1,3 @@
-#include <alloca.h>
 #include <gtest/gtest.h>
 
 #include "../includes/memory_pool.hpp"
