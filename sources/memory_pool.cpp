@@ -31,9 +31,7 @@ struct MemoryInfo
     return start_index != other.start_index || total_size != other.total_size;
   }
 
-  [[nodiscard]] auto empty() const -> bool {
-    return total_size == 0;
-  }
+  [[nodiscard]] auto empty() const -> bool { return total_size == 0; }
 
   [[nodiscard]] auto is_prev_from_given(const MemoryInfo& other) const -> bool
   {
@@ -53,7 +51,7 @@ struct Memory
   std::list<MemoryInfo> m_allocated_memories;
 };
 
-static Memory memory;
+Memory memory;
 
 void
 alloc_memory(size_t size)
@@ -147,20 +145,67 @@ free(void* mem_pointer)
                                            &memory.m_memory[info.start_index]);
                  });
 
-  MemoryInfo found_mem = *found_info;
+  if (found_info == memory.m_allocated_memories.end()) {
+    return;
+  }
 
   MemoryInfo next_from_found = {};
   MemoryInfo prev_from_found = {};
 
-  if(memory.m_free_memories.size() == 1) {
+  if (memory.m_free_memories.size() == 1) {
     MemoryInfo free_mem = (*memory.m_free_memories.begin());
 
-    if(found_mem.is_next_from_given(free_mem)) {
+    if (found_info->is_next_from_given(free_mem)) {
       prev_from_found = free_mem;
-    } else if(found_mem.is_prev_from_given(free_mem)) {
+    } else if (found_info->is_prev_from_given(free_mem)) {
       next_from_found = free_mem;
     }
+  } else if (memory.m_free_memories.size() > 1) {
+    std::vector<MemoryInfo> free_mem_sorted(memory.m_free_memories.begin(),
+                                            memory.m_free_memories.end());
+
+    std::ranges::sort(free_mem_sorted,
+                      [](const MemoryInfo& lhs, const MemoryInfo& rhs) {
+                        return lhs.start_index < rhs.start_index;
+                      });
+
+    const size_t free_mem_sorted_length = free_mem_sorted.size() - 1;
+
+    for (size_t i = 0; i < free_mem_sorted_length; ++i) {
+      if (found_info->is_next_from_given(free_mem_sorted[i])) {
+        prev_from_found = free_mem_sorted[i];
+      }
+
+      if (found_info->is_prev_from_given(free_mem_sorted[i + 1])) {
+        next_from_found = free_mem_sorted[i + 1];
+      }
+
+      if (!prev_from_found.empty() || !next_from_found.empty()) {
+        break;
+      }
+    }
   }
+
+  int num_removed = 0;
+
+  if (prev_from_found.empty() && next_from_found.empty()) {
+    memory.m_free_memories.push_back(*found_info);
+  } else if (!prev_from_found.empty() && next_from_found.empty()) {
+    prev_from_found.total_size += found_info->total_size;
+  } else if (prev_from_found.empty() && !next_from_found.empty()) {
+    found_info->total_size += next_from_found.total_size;
+
+    num_removed = memory.m_free_memories.remove(next_from_found);
+    memory.m_free_memories.push_back(*found_info);
+  } else {
+    prev_from_found.total_size +=
+      (found_info->total_size + next_from_found.total_size);
+
+    num_removed = memory.m_free_memories.remove(next_from_found);
+    memory.m_free_memories.push_back(*found_info);
+  }
+
+  num_removed = memory.m_allocated_memories.remove(*found_info);
 }
 
 void
