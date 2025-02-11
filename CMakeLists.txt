@@ -41,7 +41,6 @@ include_directories(
 
 set(COMMON_STD_HEADERS
   <cstddef>
-  <list>
   <algorithm>
   <cstdint>
   <cstring>

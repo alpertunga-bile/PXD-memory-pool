@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
-#include <list>
 #include <vector>
 
 namespace pxd::memory {
@@ -47,12 +46,12 @@ operator!=(const MemoryInfo& lhs, const MemoryInfo& rhs)
 
 struct Memory
 {
-  std::vector<uint8_t>  m_memory;
-  std::list<MemoryInfo> m_freed;
-  std::list<MemoryInfo> m_allocated;
+  std::vector<uint8_t>    m_memory;
+  std::vector<MemoryInfo> m_freed;
+  std::vector<MemoryInfo> m_allocated;
 };
 
-Memory memory;
+static Memory memory;
 
 void
 alloc_memory(size_t size)
@@ -74,9 +73,11 @@ malloc(size_t size) -> void*
   }
 
   if (memory.m_freed.size() > 1) {
-    memory.m_freed.sort([](const MemoryInfo& lhs, const MemoryInfo& rhs) {
-      return lhs.total_size < rhs.total_size;
-    });
+    std::sort(memory.m_freed.begin(),
+              memory.m_freed.end(),
+              [](const MemoryInfo& lhs, const MemoryInfo& rhs) {
+                return lhs.total_size < rhs.total_size;
+              });
   }
 
   auto selected = memory.m_freed.end();
@@ -105,7 +106,7 @@ malloc(size_t size) -> void*
     selected->start_index += size;
     selected->total_size  -= size;
   } else {
-    auto num_removed = memory.m_freed.remove(*selected);
+    memory.m_freed.erase(selected);
   }
 
   return start_ptr;
@@ -147,38 +148,43 @@ free(void* mem_pointer)
     return;
   }
 
-  MemoryInfo next_from_found = {};
-  MemoryInfo prev_from_found = {};
+  std::vector<MemoryInfo>::iterator next_from_found;
+  std::vector<MemoryInfo>::iterator prev_from_found;
+
+  bool prev_is_found = false;
+  bool next_is_found = false;
 
   if (memory.m_freed.size() == 1) {
-    MemoryInfo free_mem = (*memory.m_freed.begin());
+    auto free_mem = memory.m_freed.begin();
 
-    if (found_info->is_next_from_given(free_mem)) {
+    if (found_info->is_next_from_given(*free_mem)) {
       prev_from_found = free_mem;
-    } else if (found_info->is_prev_from_given(free_mem)) {
+      prev_is_found   = true;
+    } else if (found_info->is_prev_from_given(*free_mem)) {
       next_from_found = free_mem;
+      next_is_found   = true;
     }
   } else if (memory.m_freed.size() > 1) {
-    std::vector<MemoryInfo> free_mem_sorted(memory.m_freed.begin(),
-                                            memory.m_freed.end());
+    std::sort(memory.m_freed.begin(),
+              memory.m_freed.end(),
+              [](const MemoryInfo& lhs, const MemoryInfo& rhs) {
+                return lhs.start_index < rhs.start_index;
+              });
 
-    std::ranges::sort(free_mem_sorted,
-                      [](const MemoryInfo& lhs, const MemoryInfo& rhs) {
-                        return lhs.start_index < rhs.start_index;
-                      });
-
-    const size_t free_mem_sorted_length = free_mem_sorted.size() - 1;
+    const size_t free_mem_sorted_length = memory.m_freed.size() - 1;
 
     for (size_t i = 0; i < free_mem_sorted_length; ++i) {
-      if (found_info->is_next_from_given(free_mem_sorted[i])) {
-        prev_from_found = free_mem_sorted[i];
+      if (found_info->is_next_from_given(memory.m_freed[i])) {
+        prev_from_found = memory.m_freed.begin() + i;
+        prev_is_found   = true;
       }
 
-      if (found_info->is_prev_from_given(free_mem_sorted[i + 1])) {
-        next_from_found = free_mem_sorted[i + 1];
+      if (found_info->is_prev_from_given(memory.m_freed[i + 1])) {
+        next_from_found = memory.m_freed.begin() + (i + 1);
+        next_is_found   = true;
       }
 
-      if (!prev_from_found.empty() || !next_from_found.empty()) {
+      if (!prev_is_found || !next_is_found) {
         break;
       }
     }
@@ -186,24 +192,24 @@ free(void* mem_pointer)
 
   int num_removed = 0;
 
-  if (prev_from_found.empty() && next_from_found.empty()) {
+  if (!prev_is_found && !next_is_found) {
     memory.m_freed.push_back(*found_info);
-  } else if (!prev_from_found.empty() && next_from_found.empty()) {
-    prev_from_found.total_size += found_info->total_size;
-  } else if (prev_from_found.empty() && !next_from_found.empty()) {
-    found_info->total_size += next_from_found.total_size;
+  } else if (prev_is_found && !next_is_found) {
+    prev_from_found->total_size += found_info->total_size;
+  } else if (!prev_is_found && next_is_found) {
+    found_info->total_size += next_from_found->total_size;
 
-    num_removed = memory.m_freed.remove(next_from_found);
+    memory.m_freed.erase(next_from_found);
     memory.m_freed.push_back(*found_info);
   } else {
-    prev_from_found.total_size +=
-      (found_info->total_size + next_from_found.total_size);
+    prev_from_found->total_size +=
+      (found_info->total_size + next_from_found->total_size);
 
-    num_removed = memory.m_freed.remove(next_from_found);
+    memory.m_freed.erase(next_from_found);
     memory.m_freed.push_back(*found_info);
   }
 
-  num_removed = memory.m_allocated.remove(*found_info);
+  memory.m_allocated.erase(found_info);
 }
 
 void
