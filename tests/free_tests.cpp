@@ -8,6 +8,12 @@ TEST(Free, Array)
 
   void* temp = pxd::memory::malloc(30);
 
+  EXPECT_EQ(98, pxd::memory::total_free_memory());
+
+  pxd::memory::free(temp);
+
+  EXPECT_EQ(128, pxd::memory::total_free_memory());
+
   pxd::memory::release_memory();
 }
 
@@ -19,7 +25,12 @@ TEST(Free, PrevMemory)
   void* temp_2 = pxd::memory::malloc(10);
   void* temp_3 = pxd::memory::malloc(10);
 
+  EXPECT_EQ(98, pxd::memory::total_free_memory());
+
   pxd::memory::free(temp_3);
+
+  EXPECT_EQ(108, pxd::memory::total_free_memory());
+  EXPECT_EQ(108, pxd::memory::max_free_memory());
 
   pxd::memory::release_memory();
 }
@@ -32,8 +43,17 @@ TEST(Free, NextMemory)
   void* temp_2 = pxd::memory::malloc(10);
   void* temp_3 = pxd::memory::malloc(10);
 
+  EXPECT_EQ(98, pxd::memory::total_free_memory());
+
   pxd::memory::free(temp_2);
+
+  EXPECT_EQ(108, pxd::memory::total_free_memory());
+  EXPECT_EQ(98, pxd::memory::max_free_memory());
+
   pxd::memory::free(temp);
+
+  EXPECT_EQ(118, pxd::memory::total_free_memory());
+  EXPECT_EQ(20, pxd::memory::min_free_memory());
 
   pxd::memory::release_memory();
 }
@@ -46,9 +66,21 @@ TEST(Free, MiddleMemory)
   void* temp_2 = pxd::memory::malloc(10);
   void* temp_3 = pxd::memory::malloc(10);
 
+  EXPECT_EQ(98, pxd::memory::total_free_memory());
+
   pxd::memory::free(temp);
+
+  EXPECT_EQ(108, pxd::memory::total_free_memory());
+  EXPECT_EQ(10, pxd::memory::min_free_memory());
+
   pxd::memory::free(temp_3);
+
+  EXPECT_EQ(118, pxd::memory::total_free_memory());
+  EXPECT_EQ(10, pxd::memory::min_free_memory());
+
   pxd::memory::free(temp_2);
+
+  EXPECT_EQ(128, pxd::memory::total_free_memory());
 
   pxd::memory::release_memory();
 }
