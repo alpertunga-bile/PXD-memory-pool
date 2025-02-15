@@ -19,4 +19,13 @@ free(void* mem_pointer);
 void
 release_memory();
 
+auto
+total_free_memory() -> size_t;
+auto
+total_allocated_memory() -> size_t;
+auto
+max_free_memory() -> size_t;
+auto
+min_free_memory() -> size_t;
+
 } // namespace pxd::memory
