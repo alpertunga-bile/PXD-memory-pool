@@ -5,7 +5,7 @@
 TEST(Calloc, Array) {
   pxd::memory::alloc_memory(128);
 
-  int* temp_arr = static_cast<int*>(pxd::memory::calloc(10));
+  int* temp_arr = static_cast<int*>(pxd::memory::calloc(10 * sizeof(int)));
 
   for(int i = 0; i < 10; ++i) {
     EXPECT_EQ(temp_arr[i], 0);

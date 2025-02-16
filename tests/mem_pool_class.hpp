@@ -1,6 +1,9 @@
 #pragma once
 
+#include <algorithm>
 #include <cstddef>
+#include <cstring>
+#include <limits>
 #include <vector>
 
 namespace pxd::memory {
@@ -80,6 +83,8 @@ template<typename T>
 auto
 MemoryPool::malloc(size_t size) -> T*
 {
+  size = size * sizeof(T);
+
   if (m_freed.empty() || size > m_memory.size()) {
     return nullptr;
   }
@@ -169,9 +174,9 @@ MemoryPool::free(T* mem_pointer)
   bool prev_is_found = false;
   bool next_is_found = false;
 
-  size_t cand_prev_found_index = SIZE_MAX;
-  size_t cand_next_found_index = SIZE_MAX;
-  size_t found_index           = SIZE_MAX;
+  size_t cand_prev_found_index = std::numeric_limits<size_t>::max();
+  size_t cand_next_found_index = std::numeric_limits<size_t>::max();
+  size_t found_index           = std::numeric_limits<size_t>::max();
 
   if (m_freed.size() == 1) {
     MemoryInfo single_mem = m_freed[0];
@@ -212,14 +217,14 @@ MemoryPool::free(T* mem_pointer)
       cand_next_found_index = found_index + 1;
     }
 
-    if (cand_prev_found_index != SIZE_MAX) {
+    if (cand_prev_found_index != std::numeric_limits<size_t>::max()) {
       if (found_mem.is_next_from_given(m_freed[cand_prev_found_index])) {
         prev_from_found = m_freed[cand_prev_found_index];
         prev_is_found   = true;
       }
     }
 
-    if (cand_next_found_index != SIZE_MAX) {
+    if (cand_next_found_index != std::numeric_limits<size_t>::max()) {
       if (found_mem.is_prev_from_given(m_freed[cand_next_found_index])) {
         next_from_found = m_freed[cand_next_found_index];
         next_is_found   = true;
@@ -243,7 +248,7 @@ MemoryPool::free(T* mem_pointer)
     m_freed.erase(m_freed.begin() + cand_next_found_index);
   }
 
-  if (found_index != SIZE_MAX) {
+  if (found_index != std::numeric_limits<size_t>::max()) {
     m_freed.erase(m_freed.begin() + found_index);
   }
 

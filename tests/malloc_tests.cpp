@@ -19,7 +19,7 @@ TEST(Malloc, IntArray)
 {
   pxd::memory::alloc_memory(MEMORY_POOL_DEFAULT_SIZE);
 
-  int* arr = static_cast<int*>(pxd::memory::malloc(10));
+  int* arr = static_cast<int*>(pxd::memory::malloc(10 * sizeof(int)));
 
   for (int i = 0; i < 10; ++i) {
     arr[i] = i + 1;
