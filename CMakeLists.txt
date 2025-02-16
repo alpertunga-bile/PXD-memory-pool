@@ -26,6 +26,7 @@ set(PXD_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/sources)
 option(PXD_BUILD_TEST "Build test executable" OFF)
 
 set(PXD_HEADER_FILES
+  ${PXD_INCLUDE_DIR}/allocator.hpp
   ${PXD_INCLUDE_DIR}/memory_pool.hpp
 )
 
@@ -75,6 +76,7 @@ if(PXD_BUILD_TEST)
     set(PXD_TEST_PROJECT_NAME ${PROJECT_NAME}_test)
 
     set(PXD_TEST_SOURCE_FILES
+        ${PXD_TEST_SOURCE_DIR}/allocator_tests.cpp
         ${PXD_TEST_SOURCE_DIR}/malloc_tests.cpp
         ${PXD_TEST_SOURCE_DIR}/calloc_tests.cpp
         ${PXD_TEST_SOURCE_DIR}/free_tests.cpp
