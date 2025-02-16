@@ -2,7 +2,7 @@
 #include "includes/memory_pool.hpp"
 #include "tests/mem_pool_class.hpp"
 
-#include <stdio.h>
+#include <cstdio>
 #include <vector>
 
 auto

@@ -7,17 +7,17 @@ namespace pxd::memory {
 void
 alloc_memory(size_t size);
 
-auto
-malloc(size_t size) -> void*;
+[[nodiscard]] auto
+malloc(size_t size) noexcept -> void*;
 
-auto
-calloc(size_t size) -> void*;
-
-void
-free(void* mem_pointer);
+[[nodiscard]] auto
+calloc(size_t size) noexcept -> void*;
 
 void
-release_memory();
+free(void* mem_pointer) noexcept;
+
+void
+release_memory() noexcept;
 
 auto
 total_free_memory() -> size_t;

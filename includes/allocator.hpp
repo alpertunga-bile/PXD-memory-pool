@@ -29,7 +29,7 @@ struct allocator
 
   constexpr auto allocate(size_type n) -> T*
   {
-    if ((std::numeric_limits<size_type>::max() / sizeof(T)) < n) {
+    if ((std::numeric_limits<size_type>::max() / sizeof(value_type)) < n) {
       throw std::bad_array_new_length();
     }
 
@@ -39,7 +39,7 @@ struct allocator
       throw std::bad_alloc();
     }
 
-    return static_cast<T*>(ptr);
+    return static_cast<pointer>(ptr);
   }
 
   constexpr void deallocate(T* p, size_type n) { pxd::memory::free(p); }
