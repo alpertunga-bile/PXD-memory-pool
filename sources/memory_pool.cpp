@@ -19,14 +19,16 @@ struct MemoryInfo
   MemoryInfo& operator=(MemoryInfo&& other)      = default;
   ~MemoryInfo() noexcept                         = default;
 
-  [[nodiscard]] auto empty() const -> bool { return total_size == 0; }
+  [[nodiscard]] auto empty() const noexcept -> bool { return total_size == 0; }
 
-  [[nodiscard]] auto is_prev_from_given(const MemoryInfo& other) const -> bool
+  [[nodiscard]] auto is_prev_from_given(const MemoryInfo& other) const noexcept
+    -> bool
   {
     return (start_index + total_size) == other.start_index;
   }
 
-  [[nodiscard]] auto is_next_from_given(const MemoryInfo& other) const -> bool
+  [[nodiscard]] auto is_next_from_given(const MemoryInfo& other) const noexcept
+    -> bool
   {
     return (other.start_index + other.total_size) == start_index;
   }
