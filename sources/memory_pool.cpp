@@ -1,6 +1,7 @@
 #include "../includes/memory_pool.hpp"
 
 #include <algorithm>
+#include <bits/ranges_algo.h>
 #include <cstdint>
 #include <cstring>
 #include <limits>
@@ -130,11 +131,16 @@ calloc(size_t size) noexcept -> void*
 
 struct AdjacentsInfo
 {
-  MemoryInfo next_from_found;
-  MemoryInfo prev_from_found;
-  size_t     next_index  = std::numeric_limits<std::size_t>::max();
-  size_t     prev_index  = std::numeric_limits<std::size_t>::max();
-  size_t     found_index = std::numeric_limits<std::size_t>::max();
+  uint8_t is_found    = 0;
+  size_t  next_index  = std::numeric_limits<std::size_t>::max();
+  size_t  prev_index  = std::numeric_limits<std::size_t>::max();
+  size_t  found_index = std::numeric_limits<std::size_t>::max();
+};
+
+enum class AdjEnum : uint8_t
+{
+  NEXT = 0x0F,
+  PREV = 0xF0
 };
 
 auto
@@ -151,11 +157,11 @@ find_adjacents(const MemoryInfo& found_mem) -> AdjacentsInfo
     MemoryInfo single_mem = memory.m_freed[0];
 
     if (found_mem.is_next_from_given(single_mem)) {
-      adj_info.prev_from_found = single_mem;
-      adj_info.prev_index      = 0;
+      adj_info.is_found   |= static_cast<uint8_t>(AdjEnum::PREV);
+      adj_info.prev_index  = 0;
     } else if (found_mem.is_prev_from_given(single_mem)) {
-      adj_info.next_from_found = single_mem;
-      adj_info.next_index      = 0;
+      adj_info.is_found   |= static_cast<uint8_t>(AdjEnum::NEXT);
+      adj_info.next_index  = 0;
     }
 
     return adj_info;
@@ -189,17 +195,17 @@ find_adjacents(const MemoryInfo& found_mem) -> AdjacentsInfo
     cand_next_found_index = adj_info.found_index + 1;
   }
 
-  if (cand_prev_found_index != std::numeric_limits<size_t>::max()) {
-    if (found_mem.is_next_from_given(memory.m_freed[cand_prev_found_index])) {
-      adj_info.prev_from_found = memory.m_freed[cand_prev_found_index];
-      adj_info.prev_index      = cand_prev_found_index;
+  if (cand_next_found_index != std::numeric_limits<size_t>::max()) {
+    if (found_mem.is_prev_from_given(memory.m_freed[cand_next_found_index])) {
+      adj_info.is_found   |= static_cast<uint8_t>(AdjEnum::NEXT);
+      adj_info.next_index  = cand_next_found_index;
     }
   }
 
-  if (cand_next_found_index != std::numeric_limits<size_t>::max()) {
-    if (found_mem.is_prev_from_given(memory.m_freed[cand_next_found_index])) {
-      adj_info.next_from_found = memory.m_freed[cand_next_found_index];
-      adj_info.next_index      = cand_next_found_index;
+  if (cand_prev_found_index != std::numeric_limits<size_t>::max()) {
+    if (found_mem.is_next_from_given(memory.m_freed[cand_prev_found_index])) {
+      adj_info.is_found   |= static_cast<uint8_t>(AdjEnum::PREV);
+      adj_info.prev_index  = cand_prev_found_index;
     }
   }
 
@@ -228,30 +234,27 @@ free(void* mem_pointer) noexcept
     return;
   }
 
-  MemoryInfo found_mem = *found_info_iter;
+  AdjacentsInfo adj_info = find_adjacents(*found_info_iter);
 
-  AdjacentsInfo adj_info = find_adjacents(found_mem);
-
-  const bool prev_is_found = !adj_info.prev_from_found.empty();
-  const bool next_is_found = !adj_info.next_from_found.empty();
-
-  if (!prev_is_found && !next_is_found) {
-    memory.m_freed.push_back(found_mem);
-  } else if (prev_is_found && !next_is_found) {
-    memory.m_freed[adj_info.prev_index].total_size += found_mem.total_size;
-  } else if (!prev_is_found && next_is_found) {
-    found_mem.total_size += adj_info.next_from_found.total_size;
-
-    memory.m_freed.erase(memory.m_freed.begin() + adj_info.next_index);
-    memory.m_freed.push_back(found_mem);
+  if (adj_info.is_found == 0) {
+    memory.m_freed.push_back(*found_info_iter);
+  } else if (adj_info.is_found == static_cast<uint8_t>(AdjEnum::NEXT)) {
+    memory.m_freed[adj_info.next_index].start_index =
+      found_info_iter->start_index;
+    memory.m_freed[adj_info.next_index].total_size +=
+      found_info_iter->total_size;
+  } else if (adj_info.is_found == static_cast<uint8_t>(AdjEnum::PREV)) {
+    memory.m_freed[adj_info.prev_index].total_size +=
+      found_info_iter->total_size;
   } else {
     memory.m_freed[adj_info.prev_index].total_size +=
-      (found_mem.total_size + adj_info.next_from_found.total_size);
+      (found_info_iter->total_size +
+       memory.m_freed[adj_info.next_index].total_size);
 
     memory.m_freed.erase(memory.m_freed.begin() + adj_info.next_index);
   }
 
-  if (adj_info.found_index != SIZE_MAX) {
+  if (adj_info.found_index != std::numeric_limits<size_t>::max()) {
     memory.m_freed.erase(memory.m_freed.begin() + adj_info.found_index);
   }
 
