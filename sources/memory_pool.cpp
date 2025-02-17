@@ -1,7 +1,6 @@
 #include "../includes/memory_pool.hpp"
 
 #include <algorithm>
-#include <bits/ranges_algo.h>
 #include <cstdint>
 #include <cstring>
 #include <limits>
