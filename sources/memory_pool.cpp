@@ -139,7 +139,8 @@ struct AdjacentsInfo
 enum class AdjEnum : uint8_t
 {
   NEXT = 0x0F,
-  PREV = 0xF0
+  PREV = 0xF0,
+  BOTH = 0xFF
 };
 
 auto
@@ -235,22 +236,29 @@ free(void* mem_pointer) noexcept
 
   AdjacentsInfo adj_info = find_adjacents(*found_info_iter);
 
-  if (adj_info.is_found == 0) {
-    memory.m_freed.push_back(*found_info_iter);
-  } else if (adj_info.is_found == static_cast<uint8_t>(AdjEnum::NEXT)) {
-    memory.m_freed[adj_info.next_index].start_index =
-      found_info_iter->start_index;
-    memory.m_freed[adj_info.next_index].total_size +=
-      found_info_iter->total_size;
-  } else if (adj_info.is_found == static_cast<uint8_t>(AdjEnum::PREV)) {
-    memory.m_freed[adj_info.prev_index].total_size +=
-      found_info_iter->total_size;
-  } else {
-    memory.m_freed[adj_info.prev_index].total_size +=
-      (found_info_iter->total_size +
-       memory.m_freed[adj_info.next_index].total_size);
+  switch (adj_info.is_found) {
+    case 0:
+      memory.m_freed.push_back(*found_info_iter);
+      break;
+    case static_cast<uint8_t>(AdjEnum::NEXT):
+      memory.m_freed[adj_info.next_index].start_index =
+        found_info_iter->start_index;
+      memory.m_freed[adj_info.next_index].total_size +=
+        found_info_iter->total_size;
+      break;
+    case static_cast<uint8_t>(AdjEnum::PREV):
+      memory.m_freed[adj_info.prev_index].total_size +=
+        found_info_iter->total_size;
+      break;
+    case static_cast<uint8_t>(AdjEnum::BOTH):
+      memory.m_freed[adj_info.prev_index].total_size +=
+        (found_info_iter->total_size +
+         memory.m_freed[adj_info.next_index].total_size);
 
-    memory.m_freed.erase(memory.m_freed.begin() + adj_info.next_index);
+      memory.m_freed.erase(memory.m_freed.begin() + adj_info.next_index);
+      break;
+    default:
+      break;
   }
 
   if (adj_info.found_index != std::numeric_limits<size_t>::max()) {
