@@ -28,7 +28,7 @@ jobs:
         env:
           CXX: clang++
         working-directory: ${{github.workspace}}
-        run: cmake -B ${{ steps.strings.outputs.build-output-dir }}
+        run: cmake -DCMAKE_BUILD_TYPE=Release -B ${{ steps.strings.outputs.build-output-dir }}
 
       - name: Build
         run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }} -j8

@@ -59,6 +59,25 @@ set(LIBS_TO_LINK
 
 add_executable(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp ${PXD_SOURCE_FILES})
 
+if(${CMAKE_BUILD_TYPE} MATCHES "Release")
+  message(STATUS "Optimizations are opened for ${PROJECT_NAME}")
+
+  include(CheckIPOSupported)
+  check_ipo_supported(RESULT is_supported OUTPUT error)
+
+  if(is_supported)
+    message(STATUS "Opening LTO")
+    set_property(TARGET ${PROJECT_NAME}
+              PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+  endif(is_supported)
+
+  if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    message(STATUS "Adding -O3 -march=native flags")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -march=native")
+  endif(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+
+endif(${CMAKE_BUILD_TYPE} MATCHES "Release")
+
 target_link_libraries(${PROJECT_NAME} ${LIBS_TO_LINK})
 
 target_precompile_headers(
