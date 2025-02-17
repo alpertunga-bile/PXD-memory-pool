@@ -4,6 +4,10 @@
 
 namespace pxd::memory {
 
+constexpr size_t SIZE_1KB = 1024;
+constexpr size_t SIZE_1MB = static_cast<size_t>(1024) * 1024;
+constexpr size_t SIZE_1GB = static_cast<size_t>(1024) * 1024 * 1024;
+
 void
 alloc_memory(size_t size);
 
