@@ -14,8 +14,30 @@ alloc_memory(size_t size);
 [[nodiscard]] auto
 malloc(size_t size) noexcept -> void*;
 
+template<typename T>
+[[nodiscard]] auto easy_malloc(size_t size) noexcept -> T* {
+  void* ptr = malloc(size * sizeof(T));
+
+  if(ptr == nullptr) {
+    return nullptr;
+  }
+
+  return static_cast<T*>(ptr);
+}
+
 [[nodiscard]] auto
 calloc(size_t size) noexcept -> void*;
+
+template<typename T>
+[[nodiscard]] auto easy_calloc(size_t size) noexcept -> T* {
+  void* ptr = calloc(size * sizeof(T));
+
+  if(ptr == nullptr) {
+    return nullptr;
+  }
+
+  return static_cast<T*>(ptr);
+}
 
 void
 free(void* mem_pointer) noexcept;
