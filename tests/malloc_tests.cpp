@@ -104,3 +104,13 @@ TEST(Malloc, MoreSize) {
 
   pxd::memory::release_memory();
 }
+
+TEST(Malloc, Easy) {
+  pxd::memory::alloc_memory(128);
+
+  auto* temp = pxd::memory::easy_malloc<double>(10);
+
+  EXPECT_EQ(10 * sizeof(double), pxd::memory::total_allocated_memory());
+
+  pxd::memory::release_memory();
+}
