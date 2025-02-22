@@ -21,6 +21,7 @@ if(NOT WIN32)
 endif(NOT WIN32)
 
 if(${CMAKE_BUILD_TYPE} MATCHES "Release")
+
   message(STATUS "Optimizations are opened for ${PROJECT_NAME}")
 
   include(CheckIPOSupported)
@@ -76,7 +77,6 @@ set(LIBS_TO_LINK
 )
 
 add_executable(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp ${PXD_SOURCE_FILES})
-
 
 target_link_libraries(${PROJECT_NAME} ${LIBS_TO_LINK})
 

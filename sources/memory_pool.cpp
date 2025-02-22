@@ -234,6 +234,8 @@ free(void* mem_pointer) noexcept
     return;
   }
 
+  std::memset(&memory.m_memory[found_info_iter->start_index], 0, found_info_iter->total_size);
+
   AdjacentsInfo adj_info = find_adjacents(*found_info_iter);
 
   switch (adj_info.is_found) {
